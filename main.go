@@ -8,10 +8,16 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
+	"sync"
 )
 
 func main() {
+	runtime.GOMAXPROCS(2)
+	var wg sync.WaitGroup
+	wg.Add(1)
+
 	var points int = 0
 	// Reading all files of directory
 	files, err := os.ReadDir("./bin/files")
@@ -43,7 +49,8 @@ func main() {
 			fmt.Printf("File: %s \n", f.Name())
 
 			if points <= 2 {
-				SendRejectionEmail(FindEmail(text))
+				go SendRejectionEmail(FindEmail(text))
+				wg.Wait()
 			}
 			fmt.Printf("Candidate is Suitable, with score: %d/5 \n", points)
 
