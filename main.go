@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -41,6 +42,9 @@ func main() {
 			fmt.Println("-------------------------------------")
 			fmt.Printf("File: %s \n", f.Name())
 
+			if points <= 2 {
+				SendRejectionEmail(FindEmail(text))
+			}
 			fmt.Printf("Candidate is Suitable, with score: %d/5 \n", points)
 
 		}
@@ -149,4 +153,18 @@ func SendRejectionEmail(toEmailAddress string) error {
 		return err
 	}
 	return nil
+}
+
+func FindEmail(str string) string {
+	var re = regexp.MustCompile(`(?m)mail=[A-Za-z.@0-9]+\,`)
+	var output string
+
+	for i, match := range re.FindAllString(str, -1) {
+		fmt.Println(match, "found at index", i)
+		email := strings.Split(match, "=")[1]
+
+		email = strings.ReplaceAll(email, ",", "")
+		output = email
+	}
+	return output
 }
