@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/smtp"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -24,7 +25,7 @@ func main() {
 		if ext == ".pdf" {
 			//Convert to .txt
 			ExtractText(f.Name())
-			var file_name string = f.Name() + ".txt"
+			var file_name string = "bin/files/" + f.Name() + ".txt"
 
 			var text string = ReadText(file_name)
 			// checking what skills the candidate has
@@ -39,6 +40,7 @@ func main() {
 			}
 			fmt.Println("-------------------------------------")
 			fmt.Printf("File: %s \n", f.Name())
+
 			fmt.Printf("Candidate is Suitable, with score: %d/5 \n", points)
 
 		}
@@ -94,8 +96,9 @@ func otherSkills(text string) bool {
 }
 
 func ExtractText(name string) error {
-	outp := name + ".txt"
-	_, err := exec.Command("pdftotext", name, outp).Output()
+	var outp string = "bin/files/" + name + ".txt"
+	var input string = "bin/files/" + name
+	_, err := exec.Command("pdftotext", input, outp).Output()
 	if err != nil {
 		panic(err)
 	}
@@ -114,4 +117,36 @@ func ReadText(name string) string {
 		panic(err)
 	}
 	return output
+}
+
+func SendRejectionEmail(toEmailAddress string) error {
+	var from string = os.Getenv("SMTP_FROM")
+	var password string = os.Getenv("SMTP_PASSWORD")
+
+	to := []string{toEmailAddress}
+
+	var host string = os.Getenv("SMTP_HOST")
+	var port string = os.Getenv("SMTP_PORT")
+	var address string = host + ":" + port
+
+	var subject string = "APPLICATION RESPONSE"
+
+	var body string = `
+		Hello applicant, I regret to inform you that
+		you did not meet the required requirements for this role.
+
+		Do not be discouraged, you are welcome to apply at a later
+		time.
+
+		Have a nice day.
+	`
+	message := []byte(subject + body)
+
+	auth := smtp.PlainAuth("", from, password, host)
+
+	err := smtp.SendMail(address, auth, from, to, message)
+	if err != nil {
+		return err
+	}
+	return nil
 }
